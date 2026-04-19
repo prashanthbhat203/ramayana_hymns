@@ -45,17 +45,24 @@ const KANDA_INFO = {
     meaning: 'The Book of War',
     description: 'The great battle at Lanka — the bridge across the sea, the epic war between Rama\'s army and Ravana\'s forces, and the triumphant return to Ayodhya.',
     file: 'data/YuddhaKanda.json'
+  },
+  UttaraKanda: {
+    name: 'Uttara Kanda',
+    sanskrit: 'उत्तरकाण्ड',
+    meaning: 'The Final Book',
+    description: 'The aftermath of the war — Rama\'s reign as king, the stories of sages and demons, Sita\'s trial by fire, and the final ascension.',
+    file: 'data/UttaraKanda.json'
   }
 };
 
-const KANDA_ORDER = ['BalaKanda', 'AyodhyaKanda', 'AranyaKanda', 'KishkindhaKanda', 'SundaraKanda', 'YuddhaKanda'];
+const KANDA_ORDER = ['BalaKanda', 'AyodhyaKanda', 'AranyaKanda', 'KishkindhaKanda', 'SundaraKanda', 'YuddhaKanda', 'UttaraKanda'];
 
 // ---- State ----
 const state = {
-  dataCache: {},      // { kandaKey: Array of verse objects }
+  dataCache: {},       // { kandaKey: Array of verse objects }
   currentKanda: null,  // e.g. 'BalaKanda'
-  currentChapter: null, // e.g. '10'
-  chapters: {},        // { kandaKey: { chapterNum: [verses] } }
+  currentChapter: null, // e.g. 1
+  chapters: {},        // { kandaKey: { sargaNum: [verses] } }
 };
 
 // ---- DOM Refs ----
@@ -104,11 +111,12 @@ async function loadKandaData(kandaKey) {
     const data = await resp.json();
     state.dataCache[kandaKey] = data;
 
-    // Build chapter map
+    // Build chapter (sarga) map
     const chapters = {};
     data.forEach(verse => {
-      if (!chapters[verse.chapter]) chapters[verse.chapter] = [];
-      chapters[verse.chapter].push(verse);
+      const sarga = verse.sarga;
+      if (!chapters[sarga]) chapters[sarga] = [];
+      chapters[sarga].push(verse);
     });
     state.chapters[kandaKey] = chapters;
 
@@ -122,7 +130,6 @@ async function loadKandaData(kandaKey) {
 function getChapterList(kandaKey) {
   const chapterMap = state.chapters[kandaKey];
   if (!chapterMap) return [];
-  // Sort chapter numbers numerically
   return Object.keys(chapterMap).sort((a, b) => parseInt(a) - parseInt(b));
 }
 
@@ -136,18 +143,15 @@ function showPage(pageId) {
   const target = $(`#page-${pageId}`);
   if (target) {
     target.classList.add('active');
-    // Trigger reflow for transition
     void target.offsetWidth;
     requestAnimationFrame(() => {
       target.classList.add('visible');
     });
   }
 
-  // Update progress bar visibility
   dom.progressBar.style.display = pageId === 'reader' ? 'block' : 'none';
   dom.progressBar.style.width = '0%';
 
-  // Scroll to top
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
@@ -194,8 +198,8 @@ function renderKandaGrid() {
       <div class="kanda-sanskrit">${info.sanskrit} — ${info.meaning}</div>
       <p class="kanda-desc">${info.description}</p>
       <div class="kanda-stats">
-        <span><span class="kanda-stat-value" id="stat-chapters-${key}">—</span> chapters</span>
-        <span><span class="kanda-stat-value" id="stat-verses-${key}">—</span> verses</span>
+        <span><span class="kanda-stat-value" id="stat-chapters-${key}">—</span> sargas</span>
+        <span><span class="kanda-stat-value" id="stat-verses-${key}">—</span> shlokas</span>
       </div>
     `;
 
@@ -210,10 +214,7 @@ function renderKandaGrid() {
     dom.kandaGrid.appendChild(card);
   });
 
-  // Reveal cards with stagger
   observeReveal('.kanda-card');
-
-  // Load stats in background
   loadAllStats();
 }
 
@@ -235,19 +236,16 @@ async function renderChaptersPage(kandaKey) {
 
   state.currentKanda = kandaKey;
 
-  // Update banner
   dom.breadcrumbKandaName.textContent = info.name;
   dom.chaptersTitle.textContent = info.name;
   dom.chaptersSubtitle.textContent = `${info.sanskrit} — ${info.meaning}`;
-  dom.chaptersStats.textContent = 'Loading chapters…';
+  dom.chaptersStats.textContent = 'Loading sargas…';
 
-  // Load data
   const data = await loadKandaData(kandaKey);
   const chapters = getChapterList(kandaKey);
 
-  dom.chaptersStats.textContent = `${chapters.length} chapters · ${data.length} verses`;
+  dom.chaptersStats.textContent = `${chapters.length} sargas · ${data.length} shlokas`;
 
-  // Render chapter tiles
   dom.chapterGrid.innerHTML = '';
 
   chapters.forEach((chNum, index) => {
@@ -260,8 +258,8 @@ async function renderChaptersPage(kandaKey) {
 
     tile.innerHTML = `
       <div class="chapter-tile-number">${chNum}</div>
-      <div class="chapter-tile-label">Chapter</div>
-      <div class="chapter-tile-verses">${verseCount} verses</div>
+      <div class="chapter-tile-label">Sarga</div>
+      <div class="chapter-tile-verses">${verseCount} shlokas</div>
     `;
 
     tile.addEventListener('click', () => navigate(`#read/${kandaKey}/${chNum}`));
@@ -286,7 +284,6 @@ async function renderReaderPage(kandaKey, chapter) {
   state.currentKanda = kandaKey;
   state.currentChapter = chapter;
 
-  // Load data
   await loadKandaData(kandaKey);
 
   const chapters = getChapterList(kandaKey);
@@ -298,21 +295,19 @@ async function renderReaderPage(kandaKey, chapter) {
 
   // Update header
   dom.readerKandaName.textContent = info.name;
-  dom.readerChapterName.textContent = `Chapter ${chapter}`;
+  dom.readerChapterName.textContent = `Sarga ${chapter}`;
 
-  // Chapter title
-  dom.readerChapterTitle.textContent = `Chapter ${chapter}`;
-  dom.readerChapterMeta.textContent = `${info.name} · ${verses.length} verses`;
+  dom.readerChapterTitle.textContent = `Sarga ${chapter}`;
+  dom.readerChapterMeta.textContent = `${info.name} · ${verses.length} shlokas`;
 
   // Navigation state
-  const chapterIdx = chapters.indexOf(chapter);
+  const chapterIdx = chapters.indexOf(String(chapter));
   const hasPrev = chapterIdx > 0;
   const hasNext = chapterIdx < chapters.length - 1;
 
   dom.readerPrevBtn.disabled = !hasPrev;
   dom.readerNextBtn.disabled = !hasNext;
 
-  // Wire prev/next
   dom.readerPrevBtn.onclick = hasPrev ? () => navigate(`#read/${kandaKey}/${chapters[chapterIdx - 1]}`) : null;
   dom.readerNextBtn.onclick = hasNext ? () => navigate(`#read/${kandaKey}/${chapters[chapterIdx + 1]}`) : null;
 
@@ -323,85 +318,105 @@ async function renderReaderPage(kandaKey, chapter) {
   if (hasPrev) {
     endPrev.classList.remove('disabled');
     endPrev.onclick = () => navigate(`#read/${kandaKey}/${chapters[chapterIdx - 1]}`);
-    endPrev.textContent = `← Chapter ${chapters[chapterIdx - 1]}`;
+    endPrev.textContent = `← Sarga ${chapters[chapterIdx - 1]}`;
   } else {
     endPrev.classList.add('disabled');
     endPrev.onclick = null;
-    endPrev.textContent = '← Previous Chapter';
+    endPrev.textContent = '← Previous Sarga';
   }
 
   if (hasNext) {
     endNext.classList.remove('disabled');
     endNext.onclick = () => navigate(`#read/${kandaKey}/${chapters[chapterIdx + 1]}`);
-    endNext.textContent = `Chapter ${chapters[chapterIdx + 1]} →`;
+    endNext.textContent = `Sarga ${chapters[chapterIdx + 1]} →`;
   } else {
     endNext.classList.add('disabled');
     endNext.onclick = null;
-    endNext.textContent = 'Next Chapter →';
+    endNext.textContent = 'Next Sarga →';
   }
 
   // Render verses
   dom.verseContainer.innerHTML = '';
 
-  verses.forEach((verse, index) => {
+  verses.forEach((verse) => {
     const card = document.createElement('div');
-    const isIntro = !verse.wordDictionary && verse.translation;
-    card.className = `verse-card${isIntro ? ' intro' : ''}`;
-    card.id = `verse-${verse.chapter}-${verse.verse}`;
+    card.className = 'verse-card';
+    card.id = `verse-${verse.sarga}-${verse.shloka}`;
 
-    const hasDict = verse.wordDictionary && verse.wordDictionary.trim().length > 0;
-    const translationText = verse.translation ? verse.translation.trim() : '';
+    const shlokaText = verse.shloka_text ? verse.shloka_text.trim() : '';
+    const transliteration = verse.transliteration ? verse.transliteration.trim() : '';
+    const translation = verse.translation ? verse.translation.trim() : '';
+    const explanation = verse.explanation ? verse.explanation.trim() : '';
+    const comments = verse.comments ? verse.comments.trim() : '';
 
-    // Skip empty verses
-    if (!translationText && !hasDict) return;
+    // Skip completely empty verses
+    if (!shlokaText && !translation && !explanation) return;
 
-    let dictHTML = '';
-    if (hasDict) {
-      dictHTML = `
+    // Build expandable sections
+    let expandSections = '';
+
+    // Word-by-word meanings (translation field)
+    if (translation) {
+      expandSections += `
         <div class="word-dict-toggle" onclick="toggleDict(this)" role="button" tabindex="0" aria-expanded="false">
-          <span class="toggle-icon">▶</span> Word Meanings
+          <span class="toggle-icon">▶</span> Word-by-Word Meanings
         </div>
         <div class="word-dict-content">
-          <div class="word-dict-text">${formatWordDict(verse.wordDictionary)}</div>
+          <div class="word-dict-text">${formatWordDict(translation)}</div>
         </div>
       `;
+    }
+
+    // Commentary
+    if (comments) {
+      expandSections += `
+        <div class="word-dict-toggle commentary-toggle" onclick="toggleDict(this)" role="button" tabindex="0" aria-expanded="false">
+          <span class="toggle-icon">▶</span> Commentary
+        </div>
+        <div class="word-dict-content">
+          <div class="word-dict-text commentary-text">${escapeHTML(comments)}</div>
+        </div>
+      `;
+    }
+
+    // Transliteration section
+    let translitHTML = '';
+    if (transliteration) {
+      translitHTML = `<div class="verse-transliteration">${escapeHTML(transliteration)}</div>`;
     }
 
     card.innerHTML = `
       <div class="verse-card-inner">
         <div class="verse-number">
-          <span class="verse-number-badge">${verse.verse}</span>
-          Verse ${verse.verse}
+          <span class="verse-number-badge">${verse.shloka}</span>
+          Shloka ${verse.shloka}
         </div>
-        <div class="verse-translation">${escapeHTML(translationText)}</div>
-        ${dictHTML}
+        ${shlokaText ? `<div class="verse-sanskrit">${escapeHTML(shlokaText)}</div>` : ''}
+        ${translitHTML}
+        ${explanation ? `<div class="verse-translation">${escapeHTML(explanation)}</div>` : ''}
+        ${expandSections}
       </div>
     `;
 
     dom.verseContainer.appendChild(card);
   });
 
-  // Reveal verses on scroll
   observeReveal('.verse-card');
-
-  // Setup progress tracking
   setupProgressTracking();
 }
 
 // ---- Word Dictionary Formatter ----
 function formatWordDict(raw) {
   if (!raw) return '';
-
-  // Escape HTML first
   let text = escapeHTML(raw);
 
-  // Highlight Sanskrit terms (word= pattern)
-  text = text.replace(/(\w[\w~\^R\']*(?:\s\w[\w~\^R\']*)*)\s*=/g,
-    '<strong style="color: #D4A843;">$1</strong> =');
+  // Highlight Sanskrit terms (devanagari word followed by English meaning)
+  // Match Devanagari words
+  text = text.replace(/([\u0900-\u097F\u200C\u200D]+(?:\s[\u0900-\u097F\u200C\u200D]+)*)\s+/g,
+    '<strong class="sanskrit-term">$1</strong> ');
 
-  // Add line breaks for readability
-  text = text.replace(/;\s*/g, ';<br/>');
-  text = text.replace(/\.\s*$/gm, '.<br/>');
+  // Add line breaks at commas between word entries for readability
+  text = text.replace(/,\s*/g, ',<br/>');
 
   return text;
 }
@@ -449,7 +464,6 @@ function setupProgressTracking() {
     dom.progressBar.style.width = progress + '%';
   };
 
-  // Remove any existing listener
   window._progressHandler && window.removeEventListener('scroll', window._progressHandler);
   window._progressHandler = updateProgress;
   window.addEventListener('scroll', updateProgress, { passive: true });
@@ -458,7 +472,6 @@ function setupProgressTracking() {
 
 // ---- Keyboard Navigation ----
 document.addEventListener('keydown', (e) => {
-  // Only in reader view
   if (!dom.pageReader.classList.contains('active')) return;
 
   if (e.key === 'ArrowLeft' && !dom.readerPrevBtn.disabled) {
@@ -474,7 +487,6 @@ function initParticles() {
   const canvas = dom.particleCanvas;
   const ctx = canvas.getContext('2d');
   let particles = [];
-  let animId;
 
   function resize() {
     canvas.width = window.innerWidth;
@@ -521,7 +533,6 @@ function initParticles() {
       ctx.fillStyle = `rgba(212, 168, 67, ${alpha})`;
       ctx.fill();
 
-      // Reset dead particles
       if (p.life <= 0 || p.y < -10 || p.x < -10 || p.x > canvas.width + 10) {
         particles[i] = createParticle();
         particles[i].y = canvas.height + 10;
@@ -529,23 +540,18 @@ function initParticles() {
       }
     });
 
-    animId = requestAnimationFrame(animate);
+    requestAnimationFrame(animate);
   }
 
-  window.addEventListener('resize', () => {
-    resize();
-  });
-
+  window.addEventListener('resize', resize);
   init();
   animate();
 }
 
 // ---- Event Wiring ----
 function wireEvents() {
-  // Breadcrumb home
   dom.chaptersBreadcrumbHome.addEventListener('click', () => navigate('#home'));
 
-  // Reader back button
   dom.readerBackBtn.addEventListener('click', () => {
     if (state.currentKanda) {
       navigate(`#kanda/${state.currentKanda}`);
@@ -554,7 +560,6 @@ function wireEvents() {
     }
   });
 
-  // Hash change
   window.addEventListener('hashchange', handleRoute);
 }
 
@@ -562,15 +567,11 @@ function wireEvents() {
 async function init() {
   wireEvents();
   initParticles();
-
-  // Show home with initial route
   handleRoute();
 
-  // Hide loading screen
   setTimeout(() => {
     dom.loadingScreen.classList.add('hidden');
   }, 600);
 }
 
-// Boot
 document.addEventListener('DOMContentLoaded', init);
