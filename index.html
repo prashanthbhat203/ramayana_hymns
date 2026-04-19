@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Valmiki Ramayana — Sacred Text Reader</title>
+  <meta name="description" content="Read the Valmiki Ramayana with an immersive, verse-by-verse experience. Explore all six Kandas with translations and word-by-word Sanskrit meanings." />
+  <meta name="theme-color" content="#1A1110" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Valmiki Ramayana — Sacred Text Reader" />
+  <meta property="og:description" content="An immersive reading experience for the ancient epic Valmiki Ramayana." />
+  <meta property="og:type" content="website" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Loading Screen -->
+  <div id="loading-screen">
+    <div class="loader-mandala"></div>
+    <div class="loader-text">Loading Sacred Texts…</div>
+  </div>
+
+  <!-- Ambient Particle Canvas -->
+  <canvas id="particle-canvas"></canvas>
+
+  <!-- Reading Progress Bar -->
+  <div id="progress-bar"></div>
+
+  <!-- App Root -->
+  <div id="app">
+
+    <!-- ==================== HOME PAGE ==================== -->
+    <section id="page-home" class="page active">
+
+      <!-- Hero -->
+      <div class="hero">
+        <div class="hero-ornament"></div>
+        <div class="hero-ornament"></div>
+        <div class="hero-ornament"></div>
+
+        <div class="hero-subtitle">The Ancient Epic of India</div>
+        <h1 class="hero-title"><span>Valmiki Ramayana</span></h1>
+        <p class="hero-description">
+          Journey through the timeless verses of the Adi Kavya — the first poem of humanity.
+          Explore the sacred shlokas with translations and word meanings across all six books.
+        </p>
+        <div class="hero-divider"></div>
+
+        <div class="hero-scroll-hint">Explore the Kandas</div>
+      </div>
+
+      <!-- Kanda Grid -->
+      <div class="kanda-section">
+        <div class="section-label">The Six Books</div>
+        <h2 class="section-title">Choose a Kanda</h2>
+        <div id="kanda-grid" class="kanda-grid">
+          <!-- Cards injected by JS -->
+        </div>
+      </div>
+
+      <footer class="site-footer">
+        <div class="footer-ornament"></div>
+        <p>Valmiki Ramayana — Rendered with reverence</p>
+      </footer>
+    </section>
+
+    <!-- ==================== CHAPTERS PAGE ==================== -->
+    <section id="page-chapters" class="page">
+      <div class="chapters-page">
+        <div class="chapter-banner">
+          <nav class="breadcrumb" id="chapters-breadcrumb">
+            <span class="breadcrumb-link" id="breadcrumb-home">Home</span>
+            <span class="breadcrumb-sep">›</span>
+            <span id="breadcrumb-kanda-name"></span>
+          </nav>
+          <h1 class="chapter-banner-title" id="chapters-title"></h1>
+          <p class="chapter-banner-subtitle" id="chapters-subtitle"></p>
+          <p class="chapter-banner-stats" id="chapters-stats"></p>
+        </div>
+        <div class="chapter-grid-container">
+          <div id="chapter-grid" class="chapter-grid">
+            <!-- Chapter tiles injected by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== READER PAGE ==================== -->
+    <section id="page-reader" class="page reader-page">
+
+      <!-- Sticky Header -->
+      <header class="reader-header">
+        <div class="reader-header-left">
+          <button class="reader-back-btn" id="reader-back-btn">
+            ← <span>Chapters</span>
+          </button>
+          <div class="reader-header-info">
+            <span class="reader-header-kanda" id="reader-kanda-name"></span>
+            <span class="reader-header-chapter" id="reader-chapter-name"></span>
+          </div>
+        </div>
+        <div class="reader-header-right">
+          <button class="chapter-nav-btn" id="reader-prev-btn" disabled>
+            ← Prev
+          </button>
+          <button class="chapter-nav-btn" id="reader-next-btn">
+            Next →
+          </button>
+        </div>
+      </header>
+
+      <!-- Verse Content -->
+      <div class="reader-content">
+        <h2 class="reader-chapter-title" id="reader-chapter-title"></h2>
+        <p class="reader-chapter-meta" id="reader-chapter-meta"></p>
+        <div class="reader-chapter-divider"></div>
+
+        <div id="verse-container">
+          <!-- Verse cards injected by JS -->
+        </div>
+
+        <!-- Bottom chapter navigation -->
+        <div class="chapter-end-nav" id="chapter-end-nav">
+          <button class="chapter-end-btn" id="end-prev-btn">
+            ← Previous Chapter
+          </button>
+          <button class="chapter-end-btn" id="end-next-btn">
+            Next Chapter →
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
