@@ -63,6 +63,9 @@ const state = {
   currentKanda: null,  // e.g. 'BalaKanda'
   currentChapter: null, // e.g. 1
   chapters: {},        // { kandaKey: { sargaNum: [verses] } }
+  bookmarks: [],       // Array of { kanda, sarga, shloka, text }
+  theme: 'dark',
+  fontSize: 'medium'
 };
 
 // ---- DOM Refs ----
@@ -97,7 +100,77 @@ const dom = {
   verseContainer: $('#verse-container'),
   endPrevBtn: $('#end-prev-btn'),
   endNextBtn: $('#end-next-btn'),
+  sidebarSargaList: $('#sidebar-sarga-list'),
+  // FABs
+  fabSearch: $('#fab-search'),
+  fabBookmarks: $('#fab-bookmarks'),
+  fabSettings: $('#fab-settings'),
+  fabTop: $('#fab-top'),
+  // Modals
+  searchModal: $('#search-modal'),
+  bookmarksModal: $('#bookmarks-modal'),
+  settingsModal: $('#settings-modal'),
+  closeSearch: $('#close-search'),
+  closeBookmarks: $('#close-bookmarks'),
+  closeSettings: $('#close-settings'),
+  // Settings
+  themeToggle: $('#theme-toggle'),
+  fontToggle: $('#font-toggle'),
+  // Search
+  searchInput: $('#search-input'),
+  searchResults: $('#search-results'),
+  bookmarksList: $('#bookmarks-list'),
 };
+
+// ---- Preferences & Local Storage ----
+function loadPreferences() {
+  const savedBookmarks = localStorage.getItem('ramayana_bookmarks');
+  if (savedBookmarks) state.bookmarks = JSON.parse(savedBookmarks);
+
+  const savedTheme = localStorage.getItem('ramayana_theme') || 'dark';
+  const savedFont = localStorage.getItem('ramayana_font') || 'medium';
+  
+  setTheme(savedTheme);
+  setFontSize(savedFont);
+  renderBookmarksList();
+}
+
+function setTheme(theme) {
+  state.theme = theme;
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('ramayana_theme', theme);
+  
+  if (dom.themeToggle) {
+    dom.themeToggle.querySelectorAll('.toggle-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.value === theme);
+    });
+  }
+}
+
+function setFontSize(size) {
+  state.fontSize = size;
+  let scale = 1;
+  if (size === 'small') scale = 0.85;
+  if (size === 'large') scale = 1.25;
+  
+  document.documentElement.style.setProperty('--reading-scale', scale);
+  localStorage.setItem('ramayana_font', size);
+  
+  if (dom.fontToggle) {
+    dom.fontToggle.querySelectorAll('.toggle-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.value === size);
+    });
+  }
+}
+
+// ---- Modals ----
+function openModal(modalEl) {
+  if (modalEl) modalEl.classList.add('active');
+}
+
+function closeModal(modalEl) {
+  if (modalEl) modalEl.classList.remove('active');
+}
 
 // ---- Data Loading ----
 async function loadKandaData(kandaKey) {
@@ -284,6 +357,9 @@ async function renderReaderPage(kandaKey, chapter) {
   state.currentKanda = kandaKey;
   state.currentChapter = chapter;
 
+  // Dynamic Meta Tag (SEO & Title)
+  document.title = `${info.name} — Sarga ${chapter} | Valmiki Ramayana`;
+
   await loadKandaData(kandaKey);
 
   const chapters = getChapterList(kandaKey);
@@ -299,6 +375,27 @@ async function renderReaderPage(kandaKey, chapter) {
 
   dom.readerChapterTitle.textContent = `Sarga ${chapter}`;
   dom.readerChapterMeta.textContent = `${info.name} · ${verses.length} shlokas`;
+
+  // Render Sidebar
+  if (dom.sidebarSargaList) {
+    dom.sidebarSargaList.innerHTML = '';
+    chapters.forEach(ch => {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.className = `sidebar-link ${ch === String(chapter) ? 'active' : ''}`;
+      a.textContent = `Sarga ${ch}`;
+      a.onclick = () => {
+        if (ch !== String(chapter)) navigate(`#read/${kandaKey}/${ch}`);
+      };
+      li.appendChild(a);
+      dom.sidebarSargaList.appendChild(li);
+    });
+    // Auto-scroll sidebar to current active sarga
+    setTimeout(() => {
+      const activeLink = dom.sidebarSargaList.querySelector('.active');
+      if (activeLink) activeLink.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }, 100);
+  }
 
   // Navigation state
   const chapterIdx = chapters.indexOf(String(chapter));
@@ -385,8 +482,12 @@ async function renderReaderPage(kandaKey, chapter) {
       translitHTML = `<div class="verse-transliteration">${escapeHTML(transliteration)}</div>`;
     }
 
+    // Check if bookmarked
+    const isBookmarked = state.bookmarks.some(b => b.kanda === kandaKey && b.sarga === chapter && b.shloka === verse.shloka);
+
     card.innerHTML = `
       <div class="verse-card-inner">
+        <svg class="verse-bookmark-btn ${isBookmarked ? 'active' : ''}" onclick="toggleBookmark('${kandaKey}', ${chapter}, ${verse.shloka}, this)" width="20" height="20" viewBox="0 0 24 24" fill="${isBookmarked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" aria-label="Bookmark Shloka"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
         <div class="verse-number">
           <span class="verse-number-badge">${verse.shloka}</span>
           Shloka ${verse.shloka}
@@ -561,13 +662,204 @@ function wireEvents() {
   });
 
   window.addEventListener('hashchange', handleRoute);
+
+  // FAB Modals
+  if (dom.fabSearch) dom.fabSearch.addEventListener('click', () => { openModal(dom.searchModal); dom.searchInput.focus(); });
+  if (dom.fabBookmarks) dom.fabBookmarks.addEventListener('click', () => { openModal(dom.bookmarksModal); renderBookmarksList(); });
+  if (dom.fabSettings) dom.fabSettings.addEventListener('click', () => openModal(dom.settingsModal));
+
+  // Modal Close Buttons
+  if (dom.closeSearch) dom.closeSearch.addEventListener('click', () => closeModal(dom.searchModal));
+  if (dom.closeBookmarks) dom.closeBookmarks.addEventListener('click', () => closeModal(dom.bookmarksModal));
+  if (dom.closeSettings) dom.closeSettings.addEventListener('click', () => closeModal(dom.settingsModal));
+
+  // Close modals on overlay click or Escape
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeModal(overlay);
+    });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay.active').forEach(closeModal);
+    }
+  });
+
+  // Settings Toggles
+  if (dom.themeToggle) {
+    dom.themeToggle.addEventListener('click', (e) => {
+      if (e.target.classList.contains('toggle-btn')) setTheme(e.target.dataset.value);
+    });
+  }
+  
+  if (dom.fontToggle) {
+    dom.fontToggle.addEventListener('click', (e) => {
+      if (e.target.classList.contains('toggle-btn')) setFontSize(e.target.dataset.value);
+    });
+  }
+
+  // Scroll to Top
+  if (dom.fabTop) {
+    dom.fabTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 500) dom.fabTop.classList.add('visible');
+      else dom.fabTop.classList.remove('visible');
+    }, { passive: true });
+  }
+
+  // Search Logic
+  if (dom.searchInput) {
+    let searchTimeout;
+    dom.searchInput.addEventListener('input', (e) => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => handleSearch(e.target.value.trim()), 400);
+    });
+  }
+}
+
+// ---- Bookmarks Logic ----
+window.toggleBookmark = function(kanda, sarga, shloka, el) {
+  const index = state.bookmarks.findIndex(b => b.kanda === kanda && b.sarga === sarga && b.shloka === shloka);
+  if (index >= 0) {
+    // Remove
+    state.bookmarks.splice(index, 1);
+    el.classList.remove('active');
+    el.setAttribute('fill', 'none');
+  } else {
+    // Add (Capture text preview)
+    const verseContent = $(`#verse-${sarga}-${shloka} .verse-translation`)?.innerText || 
+                         $(`#verse-${sarga}-${shloka} .verse-sanskrit`)?.innerText || 
+                         `Sarga ${sarga}, Shloka ${shloka}`;
+    
+    state.bookmarks.unshift({
+      kanda, sarga, shloka, 
+      text: verseContent.substring(0, 80) + '...',
+      timestamp: Date.now()
+    });
+    el.classList.add('active');
+    el.setAttribute('fill', 'currentColor');
+  }
+  
+  localStorage.setItem('ramayana_bookmarks', JSON.stringify(state.bookmarks));
+  renderBookmarksList();
+};
+
+function renderBookmarksList() {
+  if (!dom.bookmarksList) return;
+  dom.bookmarksList.innerHTML = '';
+  
+  if (state.bookmarks.length === 0) {
+    dom.bookmarksList.innerHTML = '<div class="search-placeholder">No saved shlokas yet. Click the bookmark icon on any verse to save it.</div>';
+    return;
+  }
+
+  state.bookmarks.forEach(bm => {
+    const info = KANDA_INFO[bm.kanda];
+    const div = document.createElement('div');
+    div.className = 'bookmark-item';
+    div.innerHTML = `
+      <span class="bookmark-item-meta">${info.name} — Sarga ${bm.sarga}, Shloka ${bm.shloka}</span>
+      <span class="bookmark-item-text">${escapeHTML(bm.text)}</span>
+    `;
+    div.addEventListener('click', () => {
+      closeModal(dom.bookmarksModal);
+      navigate(`#read/${bm.kanda}/${bm.sarga}`);
+      // Scroll to specific verse after routing delay
+      setTimeout(() => {
+        const verseEl = $(`#verse-${bm.sarga}-${bm.shloka}`);
+        if (verseEl) verseEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }, 500);
+    });
+    dom.bookmarksList.appendChild(div);
+  });
+}
+
+// ---- Search Engine ----
+async function handleSearch(query) {
+  if (!query || query.length < 3) {
+    dom.searchResults.innerHTML = '<div class="search-placeholder">Type at least 3 characters to search...</div>';
+    return;
+  }
+
+  dom.searchResults.innerHTML = '<div class="search-placeholder">Searching sacred texts...</div>';
+  
+  const qObj = query.toLowerCase();
+  const results = [];
+  
+  // Download all kandas if not cached (lazy load massive JSON block)
+  for (const key of KANDA_ORDER) {
+    const data = await loadKandaData(key);
+    // Simple filter search
+    for (const v of data) {
+      if (
+        (v.shloka_text && v.shloka_text.toLowerCase().includes(qObj)) ||
+        (v.translation && v.translation.toLowerCase().includes(qObj)) ||
+        (v.explanation && v.explanation.toLowerCase().includes(qObj)) ||
+        (v.transliteration && v.transliteration.toLowerCase().includes(qObj))
+      ) {
+        results.push({ kanda: key, verse: v });
+      }
+      if (results.length > 50) break; // Limit to 50 results
+    }
+  }
+
+  if (results.length === 0) {
+    dom.searchResults.innerHTML = '<div class="search-placeholder">No verses found matching your query.</div>';
+    return;
+  }
+
+  dom.searchResults.innerHTML = '';
+  results.forEach(r => {
+    const { kanda, verse } = r;
+    const info = KANDA_INFO[kanda];
+    
+    // Determine which field matched best to show as preview snippet
+    let previewText = verse.explanation || verse.translation || verse.shloka_text;
+    if (previewText.length > 120) previewText = previewText.substring(0, 120) + '...';
+
+    const div = document.createElement('div');
+    div.className = 'search-item';
+    div.innerHTML = `
+      <span class="search-item-meta">${info.name} — Sarga ${verse.sarga}, Shloka ${verse.shloka}</span>
+      <span class="search-item-text">${escapeHTML(previewText)}</span>
+    `;
+    
+    div.addEventListener('click', () => {
+      closeModal(dom.searchModal);
+      navigate(`#read/${kanda}/${verse.sarga}`);
+      setTimeout(() => {
+        const verseEl = $(`#verse-${verse.sarga}-${verse.shloka}`);
+        if (verseEl) {
+          verseEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          verseEl.style.boxShadow = 'var(--shadow-glow)';
+          setTimeout(() => verseEl.style.boxShadow = '', 2000);
+        }
+      }, 500);
+    });
+    
+    dom.searchResults.appendChild(div);
+  });
+}
+
+// ---- Register Service Worker ----
+function registerSW() {
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(req => console.log('ServiceWorker registered'))
+        .catch(err => console.log('ServiceWorker registration failed:', err));
+    });
+  }
 }
 
 // ---- Init ----
 async function init() {
+  loadPreferences();
   wireEvents();
   initParticles();
   handleRoute();
+  registerSW();
 
   setTimeout(() => {
     dom.loadingScreen.classList.add('hidden');

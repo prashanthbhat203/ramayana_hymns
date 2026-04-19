@@ -17,6 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&family=Noto+Sans+Devanagari:wght@400;500;600&display=swap" rel="stylesheet" />
 
+  <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -32,6 +33,79 @@
 
   <!-- Reading Progress Bar -->
   <div id="progress-bar"></div>
+
+  <!-- Floating Action Buttons -->
+  <div id="fab-container">
+    <button class="fab-btn" id="fab-search" aria-label="Search" title="Search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    </button>
+    <button class="fab-btn" id="fab-bookmarks" aria-label="Bookmarks" title="Bookmarks">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+    </button>
+    <button class="fab-btn" id="fab-settings" aria-label="Settings" title="Settings">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+    </button>
+  </div>
+
+  <button class="fab-btn" id="fab-top" aria-label="Scroll to top" title="Scroll to top">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+  </button>
+
+  <!-- Overlay UI (Search Modal) -->
+  <div class="modal-overlay" id="search-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Search Ramayana</h2>
+        <button class="modal-close" id="close-search">×</button>
+      </div>
+      <div class="search-input-wrapper">
+        <input type="text" id="search-input" placeholder="Search across all 24,000 verses..." />
+      </div>
+      <div id="search-results" class="search-results">
+        <div class="search-placeholder">Type to search for verses, explanations, or words...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overlay UI (Bookmarks Modal) -->
+  <div class="modal-overlay" id="bookmarks-modal">
+    <div class="modal-content side-panel">
+      <div class="modal-header">
+        <h2>Saved Shlokas</h2>
+        <button class="modal-close" id="close-bookmarks">×</button>
+      </div>
+      <div id="bookmarks-list" class="bookmarks-list">
+        <!-- Bookmarks injected by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Overlay UI (Settings Modal) -->
+  <div class="modal-overlay" id="settings-modal">
+    <div class="modal-content small">
+      <div class="modal-header">
+        <h2>Reading Settings</h2>
+        <button class="modal-close" id="close-settings">×</button>
+      </div>
+      <div class="settings-body">
+        <div class="settings-group">
+          <label>Theme</label>
+          <div class="toggle-group" id="theme-toggle">
+            <button class="toggle-btn active" data-value="dark">Temple (Dark)</button>
+            <button class="toggle-btn" data-value="light">Parchment (Light)</button>
+          </div>
+        </div>
+        <div class="settings-group">
+          <label>Text Size</label>
+          <div class="toggle-group" id="font-toggle">
+            <button class="toggle-btn" data-value="small">A-</button>
+            <button class="toggle-btn active" data-value="medium">A</button>
+            <button class="toggle-btn" data-value="large">A+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- App Root -->
   <div id="app">
@@ -117,24 +191,37 @@
         </div>
       </header>
 
-      <!-- Verse Content -->
-      <div class="reader-content">
-        <h2 class="reader-chapter-title" id="reader-chapter-title"></h2>
-        <p class="reader-chapter-meta" id="reader-chapter-meta"></p>
-        <div class="reader-chapter-divider"></div>
+      <!-- Layout -->
+      <div class="reader-layout">
+        <!-- Sidebar -->
+        <aside class="reader-sidebar" id="reader-sidebar">
+          <div class="sidebar-header">
+            <h3>Sargas</h3>
+          </div>
+          <ul class="sidebar-list" id="sidebar-sarga-list">
+            <!-- Sargas injected by JS -->
+          </ul>
+        </aside>
 
-        <div id="verse-container">
-          <!-- Verse cards injected by JS -->
-        </div>
+        <!-- Verse Content -->
+        <div class="reader-content">
+          <h2 class="reader-chapter-title" id="reader-chapter-title"></h2>
+          <p class="reader-chapter-meta" id="reader-chapter-meta"></p>
+          <div class="reader-chapter-divider"></div>
 
-        <!-- Bottom chapter navigation -->
-        <div class="chapter-end-nav" id="chapter-end-nav">
-          <button class="chapter-end-btn" id="end-prev-btn">
-            ← Previous Chapter
-          </button>
-          <button class="chapter-end-btn" id="end-next-btn">
-            Next Chapter →
-          </button>
+          <div id="verse-container">
+            <!-- Verse cards injected by JS -->
+          </div>
+
+          <!-- Bottom chapter navigation -->
+          <div class="chapter-end-nav" id="chapter-end-nav">
+            <button class="chapter-end-btn" id="end-prev-btn">
+              ← Previous Chapter
+            </button>
+            <button class="chapter-end-btn" id="end-next-btn">
+              Next Chapter →
+            </button>
+          </div>
         </div>
       </div>
     </section>
