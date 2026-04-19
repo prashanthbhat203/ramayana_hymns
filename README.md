@@ -125,7 +125,7 @@ The **Valmiki Ramayana** is one of the two great Indian epics, composed by the s
 
 ## 🙏 Acknowledgments
 
-- Verse translations and word dictionaries sourced from publicly available Ramayana scholarship
+- **Data Source** — [Valmiki Ramayana Dataset](https://www.kaggle.com/datasets/niharsingla004/valmiki-ramayana-dataset) on Kaggle by Nihar Singla
 - Typography by [Google Fonts](https://fonts.google.com/)
 
 ---
